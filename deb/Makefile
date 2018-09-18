@@ -22,6 +22,7 @@ BUILD?=docker build \
 	$(BUILD_IMAGE_FLAG) \
 	--build-arg GO_IMAGE=$(GO_IMAGE) \
 	--build-arg COMMON_FILES=$(COMMON_FILES) \
+	--build-arg DOCKER_IMAGE=$(DOCKER_IMAGE) \
 	--build-arg CONTAINERD_SHIM_PROCESS_IMAGE=$(CONTAINERD_SHIM_PROCESS_IMAGE) \
 	-t debbuild-$@/$(ARCH) \
 	-f $(CURDIR)/$@/Dockerfile .

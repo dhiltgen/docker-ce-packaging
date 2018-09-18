@@ -67,6 +67,7 @@ FROM scratch
 ARG VERSION
 ARG GITCOMMIT
 ARG BUILDTIME
+ARG PLATFORM
 COPY --from=dockerd-builder /sbin/dockerd /bin/
 COPY --from=proxy-builder /sbin/docker-proxy /bin/
 COPY --from=init-builder /sbin/docker-init /bin/
@@ -79,6 +80,7 @@ LABEL \
     org.opencontainers.image.revision="${GITCOMMIT}" \
     org.opencontainers.image.url="https://www.docker.com/products/docker-engine" \
     org.opencontainers.image.vendor="Docker Inc." \
-    org.opencontainers.image.version="${VERSION}"
+    org.opencontainers.image.version="${VERSION}" \
+    distribution_based_engine="{\"platform\":\"${PLATFORM}\",\"containerd_min_version\":\"1.2.0-beta.1\",\"runtime\":\"host_install\"}"
 
 ENTRYPOINT ["/sbin/dockerd"]

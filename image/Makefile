@@ -30,7 +30,7 @@ image: image-linux
 
 
 $(ENGINE_DIR)/Dockerfile.engine:
-	cp Dockerfile.engine $(ENGINE_DIR)
+	cp Dockerfile $(ENGINE_DIR)/Dockerfile.engine
 
 # builds across multiple archs because the base images
 # utilize manifests
