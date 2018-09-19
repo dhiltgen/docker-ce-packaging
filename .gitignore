@@ -6,3 +6,5 @@ artifacts
 sources
 *.tar
 image-linux
+distribution_based_engine.json
+*.swp

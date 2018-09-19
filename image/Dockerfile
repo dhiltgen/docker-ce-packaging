@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libltdl-dev \
     libseccomp-dev \
     libtool \
+    libsystemd-dev \
     make
 RUN grep "_COMMIT=" /*.installer  |cut -f2- -d: > /binaries-commits
 
@@ -38,8 +39,8 @@ ENV DEFAULT_PRODUCT_LICENSE ${DEFAULT_PRODUCT_LICENSE}
 # TODO The way we set the version could easily be simplified not to depend on hack/...
 RUN bash ./hack/make/.go-autogen
 RUN go build -o /sbin/dockerd \
-    -tags 'autogen netgo osusergo static_build seccomp selinux journald' \
-    -installsuffix netgo -a -buildmode=pie -ldflags '-w -extldflags "-static" ' \
+    -tags 'autogen apparmor seccomp selinux journald exclude_graphdriver_devicemapper' \
+    -i -buildmode=pie -a -ldflags '-w' \
     github.com/docker/docker/cmd/dockerd
 
 # docker-proxy

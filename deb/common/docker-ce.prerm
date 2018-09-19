@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+update-alternatives --remove dockerd /usr/bin/dockerd-ce

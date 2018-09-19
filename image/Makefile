@@ -5,6 +5,7 @@ VERSION?=0.0.0-dev
 GO_BASE_IMAGE=golang
 GO_VERSION:=1.10.4
 ENGINE_GO_IMAGE=$(GO_BASE_IMAGE):$(GO_VERSION)
+# TODO wire up nightly builds to force VERSION into the nightly pattern
 STATIC_VERSION=$(shell ../static/gen-static-ver $(ENGINE_DIR) $(VERSION))
 DOCKER_HUB_ORG?=dockereng
 ARCH=$(shell uname -m)
@@ -20,31 +21,21 @@ help: ## show make targets
 .PHONY: clean
 clean: ## remove build artifacts
 	-$(RM) $(ENGINE_DIR)/Dockerfile.engine
-	-docker rmi $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(STATIC_VERSION)
+	-docker rmi $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(VERSION)
 	-rm -f image-linux
 	-$(RM) -r artifacts
 	-$(RM) *.tar
+	-rm ../engine-$(ARCH)-docker-compat.tar
 
 .PHONY: image
 image: image-linux
 
-
-$(ENGINE_DIR)/Dockerfile.engine:
+$(ENGINE_DIR)/Dockerfile.engine: Dockerfile
 	cp Dockerfile $(ENGINE_DIR)/Dockerfile.engine
 
 # builds across multiple archs because the base images
 # utilize manifests
-image-linux: $(ENGINE_DIR)/Dockerfile.engine
-	docker build -t $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(STATIC_VERSION) \
-		--build-arg GO_IMAGE="$(ENGINE_GO_IMAGE)" \
-		--build-arg VERSION="$(STATIC_VERSION)" \
-		--build-arg GITCOMMIT="$$(cd $(ENGINE_DIR) && git rev-parse --short=7 HEAD)" \
-		--build-arg BUILDTIME="$(BUILDTIME)" \
-		--build-arg PLATFORM="$(PLATFORM)" \
-		--build-arg PRODUCT="$(PRODUCT)" \
-		--build-arg DEFAULT_PRODUCT_LICENSE="$(DEFAULT_PRODUCT_LICENSE)" \
-		--file $< $(ENGINE_DIR)
-	echo $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(STATIC_VERSION) > $@
+image-linux: ../engine-$(ARCH)-docker-compat.tar
 
 DOCKER2OCI=artifacts/docker2oci
 $(DOCKER2OCI):
@@ -61,9 +52,19 @@ engine-$(ARCH).tar: engine-$(ARCH)-docker-compat.tar $(DOCKER2OCI)
 	mkdir -p $(@D)
 	tar c -C artifacts/engine-image . > $@
 
-engine-$(ARCH)-docker-compat.tar: image-linux
-	docker save -o $@ $$(cat $<)
+../engine-$(ARCH)-docker-compat.tar: $(ENGINE_DIR)/Dockerfile.engine
+	docker build -t $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(VERSION) \
+		--build-arg GO_IMAGE="$(ENGINE_GO_IMAGE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg GITCOMMIT="$$(cd $(ENGINE_DIR) && git rev-parse --short=7 HEAD)" \
+		--build-arg BUILDTIME="$(BUILDTIME)" \
+		--build-arg PLATFORM="$(PLATFORM)" \
+		--build-arg PRODUCT="$(PRODUCT)" \
+		--build-arg DEFAULT_PRODUCT_LICENSE="$(DEFAULT_PRODUCT_LICENSE)" \
+		--file $< $(ENGINE_DIR)
+	#echo $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(VERSION) > $@
+	docker save -o $@ $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(VERSION)
 
 .PHONY: release
 release:
-	docker push $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(STATIC_VERSION)
+	docker push $(DOCKER_HUB_ORG)/$(ENGINE_IMAGE):$(VERSION)
